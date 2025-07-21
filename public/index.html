@@ -18,45 +18,32 @@
 <button onclick="send()">Send</button>
 
 
-  <script>
-    const socket = io();
-    const messages = document.getElementById('messages');
+<script>
+  const socket = io();
+  const messages = document.getElementById('messages');
 
-    socket.on('chat message', function(msg) {
-      const li = document.createElement('li');
-      function formatQuotedText(text, color) {
-  return text.replace(/"([^"]+)"/g, `<span style="color: ${color}">"$1"</span>`);
-}
+  // ✅ This must be registered ONCE
+  socket.on('chat message', function(msg) {
+    const li = document.createElement('li');
+    const styledText = formatQuotedText(msg.text, msg.color);
+    li.innerHTML = `<strong>${msg.user}:</strong> ${styledText}`;
+    messages.appendChild(li);
+    messages.scrollTop = messages.scrollHeight;
+  });
 
-socket.on('chat message', function(msg) {
-  const li = document.createElement('li');
-  const styledText = formatQuotedText(msg.text, msg.color);
-  li.innerHTML = `<strong>${msg.user}:</strong> ${styledText}`;
-  messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
-});
-
-      messages.appendChild(li);
-      messages.scrollTop = messages.scrollHeight;
-    });
-
-    function send() {
-  const user = document.getElementById('username').value;
-  const text = document.getElementById('m').value;
-  const color = document.getElementById('color').value;
-  if (user && text) {
-    socket.emit('chat message', { user, text, color });
-    document.getElementById('m').value = '';
-  }
-}
-
-
-    function getColor(name) {
-      const colors = ['#2ecc71', '#e74c3c', '#3498db', '#9b59b6'];
-      let total = 0;
-      for (let i = 0; i < name.length; i++) total += name.charCodeAt(i);
-      return colors[total % colors.length];
+  function send() {
+    const user = document.getElementById('username').value;
+    const text = document.getElementById('m').value;
+    const color = document.getElementById('color').value;
+    if (user && text) {
+      socket.emit('chat message', { user, text, color });
+      document.getElementById('m').value = '';
     }
-  </script>
+  }
+
+  function formatQuotedText(text, color) {
+    return text.replace(/"([^"]+)"/g, `<span style="color: ${color}">"$1"</span>`);
+  }
+</script>
 </body>
 </html>
