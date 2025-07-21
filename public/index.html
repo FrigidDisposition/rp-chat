@@ -86,6 +86,22 @@
       margin-top: 0;
       color: #90caf9;
     }
+
+    textarea#m {
+  width: 60%;
+  resize: none;
+  overflow: hidden;
+  min-height: 30px;
+  max-height: 150px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
   </style>
 </head>
 <body>
@@ -101,7 +117,7 @@
     <ul id="messages"></ul>
     <input id="username" placeholder="Name" />
     <input id="color" type="color" value="#2ecc71" />
-    <input id="m" autocomplete="off" placeholder="Message" />
+    <textarea id="m" rows="1" placeholder="Message"></textarea>
     <button onclick="send()">Send</button>
   </div>
 
@@ -173,6 +189,14 @@ socket.on('room list', (rooms) => {
         document.getElementById('m').value = '';
       }
     }
+    
+    const messageInput = document.getElementById('m');
+
+messageInput.addEventListener('input', () => {
+  messageInput.style.height = 'auto';
+  messageInput.style.height = messageInput.scrollHeight + 'px';
+});
+
 
     function formatQuotedText(text, color) {
       return text.replace(/"([^"\r\n]+)"/g, `<span style=\"color: ${color}\">"$1"</span>`);
