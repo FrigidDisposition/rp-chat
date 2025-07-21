@@ -8,10 +8,17 @@ const io = new Server(server);
 app.use(express.static('public'));
 
 io.on('connection', (socket) => {
-  console.log('a user connected');
+  let currentRoom = 'lobby';
+  socket.join(currentRoom);
+
+  socket.on('join room', (room) => {
+    socket.leave(currentRoom);
+    currentRoom = room;
+    socket.join(room);
+  });
 
   socket.on('chat message', (msg) => {
-    io.emit('chat message', msg);
+    io.to(msg.room).emit('chat message', msg);
   });
 });
 
