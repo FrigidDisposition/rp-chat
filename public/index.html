@@ -165,6 +165,18 @@
     function formatQuotedText(text, color) {
       return text.replace(/"([^"\r\n]+)"/g, `<span style=\"color: ${color}\">"$1"</span>`);
     }
+    // 👇 Add this line below socket.on('chat message', ...) block
+socket.on('chat history', function(history) {
+  messages.innerHTML = '';
+  history.forEach(msg => {
+    const li = document.createElement('li');
+    const styledText = formatQuotedText(msg.text, msg.color);
+    li.innerHTML = `<strong>${msg.user}:</strong> ${styledText}`;
+    messages.appendChild(li);
+  });
+  messages.scrollTop = messages.scrollHeight;
+});
+
 
     // Init
     ['lobby'].forEach(addRoomToList);
