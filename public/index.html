@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RP Chat (Socket.IO)</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    #messages { list-style: none; height: 300px; overflow-y: scroll; padding: 0; border: 1px solid #ccc; margin-bottom: 10px; }
+    #messages li { padding: 4px; }
+  </style>
+</head>
+<body>
+  <h2>RP Chatroom</h2>
+  <ul id="messages"></ul>
+<input id="username" placeholder="Name" />
+<input id="color" type="color" value="#2ecc71" title="Choose message color" />
+<input id="m" autocomplete="off" placeholder="Message" />
+<button onclick="send()">Send</button>
+
+
+  <script>
+    const socket = io();
+    const messages = document.getElementById('messages');
+
+    socket.on('chat message', function(msg) {
+      const li = document.createElement('li');
+      function formatQuotedText(text, color) {
+  return text.replace(/"([^"]+)"/g, `<span style="color: ${color}">"$1"</span>`);
+}
+
+socket.on('chat message', function(msg) {
+  const li = document.createElement('li');
+  const styledText = formatQuotedText(msg.text, msg.color);
+  li.innerHTML = `<strong>${msg.user}:</strong> ${styledText}`;
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+      messages.appendChild(li);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    function send() {
+  const user = document.getElementById('username').value;
+  const text = document.getElementById('m').value;
+  const color = document.getElementById('color').value;
+  if (user && text) {
+    socket.emit('chat message', { user, text, color });
+    document.getElementById('m').value = '';
+  }
+}
+
+
+    function getColor(name) {
+      const colors = ['#2ecc71', '#e74c3c', '#3498db', '#9b59b6'];
+      let total = 0;
+      for (let i = 0; i < name.length; i++) total += name.charCodeAt(i);
+      return colors[total % colors.length];
+    }
+  </script>
+</body>
+</html>
