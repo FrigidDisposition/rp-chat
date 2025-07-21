@@ -29,9 +29,26 @@ io.on('connection', (socket) => {
   let currentRoom = 'lobby';
   socket.join(currentRoom);
 
-  // Send message history for the room
+  // === 🆕 ROOM SHARING ===
+  let allRooms = new Set(Object.keys(chatLog)); // Load from existing chatLog
+
+  // Send full room list to the client on connect
+  socket.emit('room list', Array.from(allRooms));
+
+  // When a client creates a new room
+  socket.on('create room', (room) => {
+    if (!allRooms.has(room)) {
+      allRooms.add(room);
+      chatLog[room] = [];
+      saveChatLog();
+      io.emit('new room', room); // Broadcast to all clients
+    }
+  });
+
+  // === Send chat history for default room ===
   socket.emit('chat history', chatLog[currentRoom] || []);
 
+  // When user joins a new room
   socket.on('join room', (room) => {
     socket.leave(currentRoom);
     currentRoom = room;
@@ -39,6 +56,7 @@ io.on('connection', (socket) => {
     socket.emit('chat history', chatLog[room] || []);
   });
 
+  // When a message is sent
   socket.on('chat message', (msg) => {
     if (!chatLog[msg.room]) chatLog[msg.room] = [];
     chatLog[msg.room].push(msg);
@@ -47,6 +65,7 @@ io.on('connection', (socket) => {
     io.to(msg.room).emit('chat message', msg);
   });
 });
+
 
 server.listen(3000, () => {
   console.log('listening on *:3000');

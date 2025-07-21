@@ -134,14 +134,14 @@
       }
     }
 
-    function createRoom() {
-      const room = document.getElementById('new-room').value.trim();
-      if (room) {
-        addRoomToList(room);
-        joinRoom(room);
-        document.getElementById('new-room').value = '';
-      }
-    }
+function createRoom() {
+  const room = document.getElementById('new-room').value.trim();
+  if (room) {
+    socket.emit('create room', room); // Let server handle adding + broadcasting
+    document.getElementById('new-room').value = '';
+  }
+}
+
 
     socket.on('chat message', function(msg) {
       if (msg.room !== currentRoom) return;
@@ -151,6 +151,18 @@
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
     });
+
+    // Add rooms that are broadcast from the server
+socket.on('new room', (room) => {
+  addRoomToList(room);
+});
+
+// On first connect, receive existing rooms
+socket.on('room list', (rooms) => {
+  roomList.innerHTML = '';
+  rooms.forEach(addRoomToList);
+});
+
 
     function send() {
       const user = document.getElementById('username').value;
