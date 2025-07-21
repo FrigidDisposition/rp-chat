@@ -87,6 +87,33 @@
       color: #90caf9;
     }
 
+    .user-list {
+  margin-top: 10px;
+  background-color: #181818;
+  border: 1px solid #2d2d2d;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Trebuchet MS', sans-serif;
+}
+
+.user-list li {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  background: linear-gradient(to right, #2e2e2e, #1c1c1c);
+  border-radius: 5px;
+  color: #d6d6d6;
+  font-weight: 500;
+  box-shadow: 0 0 4px rgba(100, 100, 255, 0.3);
+  transition: background 0.3s;
+}
+
+.user-list li:hover {
+  background: #333;
+  cursor: default;
+}
+
     textarea#m {
   width: 60%;
   resize: none;
@@ -110,6 +137,10 @@
     <div id="room-list"></div>
     <input id="new-room" placeholder="New room name" />
     <button onclick="createRoom()">Create</button>
+    <h4 style="margin-top: 20px;">Users in Room</h4>
+<ul id="user-list" class="user-list"></ul>
+    <h4>Users in Room</h4>
+<ul id="user-list" style="list-style: none; padding: 0;"></ul>
   </div>
 
   <div id="main">
@@ -130,7 +161,7 @@
     const roomTitle = document.getElementById('room-title');
 
     function joinRoom(room) {
-      socket.emit('join room', room);
+      socket.emit('set username', localStorage.getItem('username'));
       currentRoom = room;
       messages.innerHTML = '';
       roomTitle.textContent = 'Room: ' + room;
@@ -157,6 +188,16 @@ function createRoom() {
     document.getElementById('new-room').value = '';
   }
 }
+
+socket.on('user list', function(users) {
+  const userList = document.getElementById('user-list');
+  userList.innerHTML = '';
+  users.forEach(name => {
+    const li = document.createElement('li');
+    li.textContent = name;
+    userList.appendChild(li);
+  });
+});
 
 
     socket.on('chat message', function(msg) {

@@ -25,9 +25,29 @@ function saveChatLog() {
   fs.writeFileSync(CHAT_LOG_FILE, JSON.stringify(chatLog, null, 2));
 }
 
+let usersInRooms = {}; // { room: Set of usernames }
+
 io.on('connection', (socket) => {
   let currentRoom = 'lobby';
   socket.join(currentRoom);
+
+  io.on('connection', (socket) => {
+  let currentRoom = 'lobby';
+  socket.join(currentRoom);
+
+  let username = 'Unknown';
+
+  socket.on('set username', (name) => {
+    username = name;
+    // Add to current room
+    if (!usersInRooms[currentRoom]) usersInRooms[currentRoom] = new Set();
+    usersInRooms[currentRoom].add(username);
+    io.to(currentRoom).emit('user list', Array.from(usersInRooms[currentRoom]));
+  });
+
+  // rest of your events like join room, chat message, etc...
+});
+
 
   // === 🆕 ROOM SHARING ===
   let allRooms = new Set(Object.keys(chatLog)); // Load from existing chatLog
@@ -49,12 +69,30 @@ io.on('connection', (socket) => {
   socket.emit('chat history', chatLog[currentRoom] || []);
 
   // When user joins a new room
-  socket.on('join room', (room) => {
-    socket.leave(currentRoom);
-    currentRoom = room;
-    socket.join(room);
-    socket.emit('chat history', chatLog[room] || []);
-  });
+socket.on('join room', (room) => {
+  // Remove from previous room
+  if (usersInRooms[currentRoom]) {
+    usersInRooms[currentRoom].delete(username);
+    io.to(currentRoom).emit('user list', Array.from(usersInRooms[currentRoom]));
+  }
+
+  socket.leave(currentRoom);
+  currentRoom = room;
+  socket.join(room);
+
+  if (!usersInRooms[currentRoom]) usersInRooms[currentRoom] = new Set();
+  usersInRooms[currentRoom].add(username);
+
+  socket.emit('chat history', chatLog[room] || []);
+  io.to(currentRoom).emit('user list', Array.from(usersInRooms[currentRoom]));
+});
+
+socket.on('disconnect', () => {
+  if (usersInRooms[currentRoom]) {
+    usersInRooms[currentRoom].delete(username);
+    io.to(currentRoom).emit('user list', Array.from(usersInRooms[currentRoom]));
+  }
+});
 
   // When a message is sent
   socket.on('chat message', (msg) => {
