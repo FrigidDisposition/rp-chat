@@ -1,49 +1,117 @@
+<!-- === RP Chat App with Dynamic Rooms === -->
 <!DOCTYPE html>
 <html>
 <head>
-  <title>RP Chat (Socket.IO)</title>
+  <title>RP Chat (Rooms)</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    body { font-family: sans-serif; }
-    #messages { list-style: none; height: 300px; overflow-y: scroll; padding: 0; border: 1px solid #ccc; margin-bottom: 10px; }
+    body { display: flex; font-family: sans-serif; margin: 0; }
+    #sidebar {
+      width: 200px;
+      background: #f2f2f2;
+      padding: 10px;
+      border-right: 1px solid #ccc;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    #main {
+      flex: 1;
+      padding: 10px;
+    }
+    #messages {
+      list-style: none;
+      height: 300px;
+      overflow-y: scroll;
+      padding: 0;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
     #messages li { padding: 4px; }
+    .room { cursor: pointer; margin: 5px 0; color: blue; }
+    .room.active { font-weight: bold; text-decoration: underline; }
   </style>
 </head>
 <body>
-  <h2>RP Chatroom</h2>
-  <ul id="messages"></ul>
-<input id="username" placeholder="Name" />
-<input id="color" type="color" value="#2ecc71" title="Choose message color" />
-<input id="m" autocomplete="off" placeholder="Message" />
-<button onclick="send()">Send</button>
+  <div id="sidebar">
+    <h4>Rooms</h4>
+    <div id="room-list"></div>
+    <input id="new-room" placeholder="New room name" />
+    <button onclick="createRoom()">Create</button>
+  </div>
 
+  <div id="main">
+    <h2 id="room-title">Room: lobby</h2>
+    <ul id="messages"></ul>
+    <input id="username" placeholder="Name" />
+    <input id="color" type="color" value="#2ecc71" />
+    <input id="m" autocomplete="off" placeholder="Message" />
+    <button onclick="send()">Send</button>
+  </div>
 
-<script>
-  const socket = io();
-  const messages = document.getElementById('messages');
+  <script>
+    const socket = io();
+    let currentRoom = "lobby";
 
-  // ✅ This must be registered ONCE
-  socket.on('chat message', function(msg) {
-    const li = document.createElement('li');
-    const styledText = formatQuotedText(msg.text, msg.color);
-    li.innerHTML = `<strong>${msg.user}:</strong> ${styledText}`;
-    messages.appendChild(li);
-    messages.scrollTop = messages.scrollHeight;
-  });
+    const messages = document.getElementById('messages');
+    const roomList = document.getElementById('room-list');
+    const roomTitle = document.getElementById('room-title');
 
-  function send() {
-    const user = document.getElementById('username').value;
-    const text = document.getElementById('m').value;
-    const color = document.getElementById('color').value;
-    if (user && text) {
-      socket.emit('chat message', { user, text, color });
-      document.getElementById('m').value = '';
+    function joinRoom(room) {
+      socket.emit('join room', room);
+      currentRoom = room;
+      messages.innerHTML = '';
+      roomTitle.textContent = 'Room: ' + room;
+      document.querySelectorAll('.room').forEach(r => r.classList.remove('active'));
+      const active = document.getElementById('room-' + room);
+      if (active) active.classList.add('active');
     }
-  }
 
-  function formatQuotedText(text, color) {
-    return text.replace(/"([^"]+)"/g, `<span style="color: ${color}">"$1"</span>`);
-  }
-</script>
+    function addRoomToList(room) {
+      if (!document.getElementById('room-' + room)) {
+        const div = document.createElement('div');
+        div.className = 'room';
+        div.id = 'room-' + room;
+        div.textContent = room;
+        div.onclick = () => joinRoom(room);
+        roomList.appendChild(div);
+      }
+    }
+
+    function createRoom() {
+      const room = document.getElementById('new-room').value.trim();
+      if (room) {
+        addRoomToList(room);
+        joinRoom(room);
+        document.getElementById('new-room').value = '';
+      }
+    }
+
+    socket.on('chat message', function(msg) {
+      if (msg.room !== currentRoom) return;
+      const li = document.createElement('li');
+      const styledText = formatQuotedText(msg.text, msg.color);
+      li.innerHTML = `<strong>${msg.user}:</strong> ${styledText}`;
+      messages.appendChild(li);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    function send() {
+      const user = document.getElementById('username').value;
+      const text = document.getElementById('m').value;
+      const color = document.getElementById('color').value;
+      if (user && text) {
+        socket.emit('chat message', { user, text, color, room: currentRoom });
+        document.getElementById('m').value = '';
+      }
+    }
+
+    function formatQuotedText(text, color) {
+      return text.replace(/\"([^\"\\r\\n]+)\"/g, `<span style=\"color: ${color}\">"$1"</span>`);
+    }
+
+    // Init
+    ['lobby'].forEach(addRoomToList);
+    joinRoom('lobby');
+  </script>
 </body>
 </html>
